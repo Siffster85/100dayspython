@@ -1,0 +1,5 @@
+print("Welcome to the band name generator")
+print("This is honestly not a password hint stealer")
+a = input("Let's start with the name of a city you like?\n")
+b = input("And let's have the name of an animal you like?\n")
+print("OK! How about " + a + " " + b + "! How's that sound?")
