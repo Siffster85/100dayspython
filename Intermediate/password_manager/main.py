@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 import random
+import json
 import pyperclip
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 def generate_password():
@@ -19,29 +20,59 @@ def generate_password():
   pyperclip.copy(password)
 
 # ---------------------------- SAVE PASSWORD ------------------------------- #
-#Save the details to a txt file
 def save():
   website_input = e_website.get()
   email_user_input = e_email_user.get()
   password_input = e_password.get()
-  
+  new_data = {
+    website_input: {
+      "email": email_user_input,
+      "password": password_input,
+    }
+  }
   if len(website_input) == 0 or len(email_user_input) == 0 or len(password_input) == 0:
     messagebox.showinfo(title="Missing Entires", message="You are missing some information, try again.")
   else:
     confirmed = messagebox.askokcancel(title=website_input, message=f"Are these correct?:\nEmail: {email_user_input}\nPassword: {password_input}\nConfirm?")
     if confirmed:
-      with open("./Intermediate/password_manager/data.txt", mode="a") as data:
-        data.write(f"{website_input} | {email_user_input} | {password_input}\n")
+      try:
+        with open("./Intermediate/password_manager/data.json", mode="r") as data_file:
+          data = json.load(data_file)
+      except FileNotFoundError:
+        with open("./Intermediate/password_manager/data.json", mode="w") as data_file:
+          json.dump(new_data, data_file, indent=2)
+      else:
+        data.update(new_data)
+        with open("./Intermediate/password_manager/data.json", mode="w") as data_file:
+          json.dump(data, data_file, indent=2)
+      finally:
         e_website.delete(0, END)
         e_email_user.delete(0, END)
         e_password.delete(0, END)
         e_email_user.insert(END, "test@test.test")
         e_website.focus()
 
+# ---------------------------- SEARCH PASSWORD ------------------------------- #
+def search():
+  website_search = e_website.get()
+  if len(website_search) == 0:
+    messagebox.showinfo(title="Missing Entires", message="You are missing a website, try again.")
+  else:
+    try:
+      with open("./Intermediate/password_manager/data.json", mode="r") as data_file:
+        data = json.load(data_file)
+      try:
+        messagebox.showinfo(title=f"{website_search}", message=f"Email: {data[website_search]['email']}\nPassword: {data[website_search]['password']}")
+      except KeyError:
+        messagebox.showinfo(title="No Website", message=f"You have nothing saved for '{website_search}' try again.")
+    except FileNotFoundError:
+      messagebox.showinfo(title="No File", message="No Data File.")
+    except json.JSONDecodeError:
+      messagebox.showerror(title="JSON Error", message="The data file is corrupted.")
 # ---------------------------- UI SETUP ------------------------------- #
 window = Tk()
 window.title("Password Manager")
-window.config(padx=30, pady=30)
+window.config(padx=20, pady=20)
 
 #Main Image
 canvas = Canvas(width=200, height=200)
@@ -60,8 +91,8 @@ l_password = Label(text="Password:")
 l_password.grid(column=0, row=3, sticky=E)
 
 #Inputs
-e_website = Entry(width=35)
-e_website.grid(column=1, row=1, columnspan=2, sticky=W)
+e_website = Entry(width=25)
+e_website.grid(column=1, row=1, sticky=W)
 e_website.focus()
 
 e_email_user = Entry(width=35)
@@ -73,9 +104,12 @@ e_password.grid(column=1, row=3, sticky=W)
 
 #Buttons
 b_generate = Button(text="Generate", command=generate_password, padx=6, pady=1)
-b_generate.grid(column=2, row=3, sticky=W)
+b_generate.grid(column=2, row=3, sticky=E)
 
 b_add = Button(text="Add to Storage", command=save, width=32, pady=1)
-b_add.grid(column=1, row=4, columnspan=2, sticky=W)
+b_add.grid(column=1, row=4, columnspan=2, sticky=E)
+
+b_search = Button(text="Search", command=search, padx=15, pady=1)
+b_search.grid(column=2, row=1, sticky=E)
 
 window.mainloop()
